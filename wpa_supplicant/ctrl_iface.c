@@ -3277,7 +3277,7 @@ static int ctrl_iface_get_capability_modes(int res, char *strict,
 					   struct wpa_driver_capa *capa,
 					   char *buf, size_t buflen)
 {
-	int ret;
+	int ret, first = 1;
 	char *pos, *end;
 	size_t len;
 
@@ -3294,19 +3294,20 @@ static int ctrl_iface_get_capability_modes(int res, char *strict,
 	}
 
 	if (capa->flags & WPA_DRIVER_FLAGS_IBSS) {
-		ret = os_snprintf(pos, end - pos, "%sIBSS",
-				  pos == buf ? "" : " ");
+		ret = os_snprintf(pos, end - pos, "%sIBSS", first ? "" : " ");
 		if (ret < 0 || ret >= end - pos)
 			return pos - buf;
 		pos += ret;
+		first = 0;
 	}
 
 	if (capa->flags & WPA_DRIVER_FLAGS_AP) {
 		ret = os_snprintf(pos, end - pos, "%sAP",
-				  pos == buf ? "" : " ");
+				  first ? "" : " ");
 		if (ret < 0 || ret >= end - pos)
 			return pos - buf;
 		pos += ret;
+		first = 0;
 	}
 
 	return pos - buf;
@@ -3340,7 +3341,7 @@ static int ctrl_iface_get_capability_channels(struct wpa_supplicant *wpa_s,
 		default:
 			continue;
 		}
-		ret = os_snprintf(pos, end - pos, "Mode[%s] Channels:", hmode);
+		ret = os_snprintf(pos, end - pos, "Mode[%s] Channels:\n", hmode);
 		if (ret < 0 || ret >= end - pos)
 			return pos - buf;
 		pos += ret;
@@ -3348,7 +3349,9 @@ static int ctrl_iface_get_capability_channels(struct wpa_supplicant *wpa_s,
 		for (i = 0; i < wpa_s->hw.modes[j].num_channels; i++) {
 			if (chnl[i].flag & HOSTAPD_CHAN_DISABLED)
 				continue;
-			ret = os_snprintf(pos, end - pos, " %d", chnl[i].chan);
+			ret = os_snprintf(pos, end - pos, " %d = %d MHz%s\n",
+					  chnl[i].chan, chnl[i].freq,
+					  chnl[i].flag & HOSTAPD_CHAN_NO_IBSS ? " (NO_IBSS)" : "");
 			if (ret < 0 || ret >= end - pos)
 				return pos - buf;
 			pos += ret;
